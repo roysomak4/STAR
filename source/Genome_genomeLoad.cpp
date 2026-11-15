@@ -5,6 +5,7 @@
 #include "streamFuns.h"
 #include "SharedMemory.h"
 #include "genomeScanFastaFiles.h"
+#include "hugePages.h"
 
 //addresses with respect to shmStart of several genome values
 #define SHM_sizeG 0
@@ -270,6 +271,7 @@ void Genome::genomeLoad(){//allocate and load Genome
                 };
 
                 G1=new char[nGenomePass2+L+L];
+                adviseHugePages(G1, nGenomePass2+L+L);
 
                 SApass2.defineBits(GstrandBit+1,nSApass2);
                 SApass2.allocateArray();
@@ -284,9 +286,11 @@ void Genome::genomeLoad(){//allocate and load Genome
             } else {//no sjdb insertions
                 if (genomeInsertL==0) {// no sequence insertion, simple allocation
                     G1=new char[nGenome+L+L];
+                adviseHugePages(G1, nGenome+L+L);
                     SA.allocateArray();
                 } else {
                     G1=new char[nGenome+L+L+genomeInsertL];
+                adviseHugePages(G1, nGenome+L+L+genomeInsertL);
                     SAinsert.defineBits(GstrandBit+1,nSA+2*genomeInsertL);//TODO: re-define GstrandBit if necessary
                     SAinsert.allocateArray();
                     SA.pointArray(SAinsert.charArray+SAinsert.lengthByte-SA.lengthByte);

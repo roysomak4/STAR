@@ -1,4 +1,5 @@
 # include "PackedArray.h"
+#include "hugePages.h"
 
 PackedArray::PackedArray() {
     charArray=NULL;
@@ -30,6 +31,7 @@ void PackedArray::pointArray(char* pointerCharIn) {
 
 void PackedArray::allocateArray() {
     charArray=new char[lengthByte];
+    adviseHugePages(charArray, lengthByte); //before the array is touched
     memset(charArray+lengthByte-sizeof(uint),0,sizeof(uint));//set the last 8 bytes to zero, since some of them may lnever be written
     arrayAllocated=true;
 };
