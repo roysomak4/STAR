@@ -318,10 +318,17 @@ uint localSearchNisMM(const char *x, uint nx, const char *y, uint ny, double pMM
     //find the best alignment of two short sequences x and y
     //pMM is the maximum percentage of mismatches
     //Ns in x OR y are considered mismatches
+    //The overlap length nOv=min(ny,nx-ix) bounds nMatch and never grows with ix, so once nOv<nMatchBest
+    //no later offset can pass the update test below: stop. ixBest is unchanged.
+    //(nOv==nMatchBest must still be checked: an exact match of that length beats a best with mismatches.)
+    //Keep the inner loop free of early exits: the compiler vectorises it.
     uint nMatch=0, nMM=0, nMatchBest=0, nMMbest=0, ixBest=nx;
     for (uint ix=0;ix<nx;ix++) {
+        uint nOv=min(ny,nx-ix);
+        if (nOv<nMatchBest)
+            break;
         nMatch=0; nMM=0;
-        for (uint iy=0;iy<min(ny,nx-ix);iy++) {
+        for (uint iy=0;iy<nOv;iy++) {
             if (x[ix+iy]==y[iy] && y[iy]<4) {
                 nMatch++;
             } else {

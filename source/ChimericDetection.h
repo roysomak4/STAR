@@ -17,6 +17,7 @@ class ChimericDetection {
         uint nW, *nWinTr;
         char** Read1;
         Genome &outGen;
+        vector <ChimericSegment> segGood; //segments that pass segmentCheck, in window/align order; reused for each read
 
     public:
         vector <ChimericAlign> chimAligns;
