@@ -5,11 +5,16 @@
 #include <cmath>
 #include <ctime>
 
-void stitchWindowAligns(uint iA, uint nA, int Score, bool WAincl[], uint tR2, uint tG2, Transcript trA, \
+void stitchWindowAligns(uint iA, uint nA, int Score, bool WAincl[], uint tR2, uint tG2, Transcript &trA, \
                         uint Lread, uiWA* WA, char* R, Genome &mapGen, \
                         Parameters& P, Transcript** wTr, uint* nWinTr, ReadAlign *RA) {
     //recursively stitch aligns for one gene
     //*nWinTr - number of transcripts for the current window
+    //trA is passed by reference to avoid copying it at every recursion level (it was passed by value).
+    //This is safe because each Transcript object is modified only after its last use by its owner:
+    //the include branch below works on the copy trAi, and trA is handed on only to the exclude branch,
+    //the last action at each level; the leaf (iA>=nA) then modifies it in place.
+    //The top-level caller (ReadAlign::stitchPieces) does not use its trA after the call.
 
     if (iA>=nA && tR2==0) return; //no aligns in the transcript
 
