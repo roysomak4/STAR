@@ -139,6 +139,8 @@ class ReadAlign {
 
         //binned alignments
         uintWinBin **winBin; //binned genome: window ID (number) per bin
+        vector<uint32> winBinSet[2]; //bins of winBin[0/1] written since the last reset, so stitchPieces resets only those
+        inline void setWinBin(uint aStr, uint iBin, uintWinBin iWin) {winBin[aStr][iBin]=iWin; winBinSet[aStr].push_back((uint32)iBin);};
 
         //alignments
         uiPC *PC; //pieces coordinates

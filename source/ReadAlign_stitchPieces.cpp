@@ -11,9 +11,13 @@
 
 void ReadAlign::stitchPieces(char **R, uint Lread) {
 
-    //zero-out winBin
-    memset(winBin[0],255,sizeof(winBin[0][0])*P.winBinN);
-    memset(winBin[1],255,sizeof(winBin[0][0])*P.winBinN);
+    //zero-out winBin: every write to winBin goes through setWinBin(), which records the bin,
+    //so resetting the recorded bins restores the all-255 state that a full memset would give.
+    for (uint iStr=0; iStr<2; iStr++) {
+        for (uint32 iBin : winBinSet[iStr])
+            winBin[iStr][iBin]=uintWinBinMax;
+        winBinSet[iStr].clear();
+    };
 
 
 //     for (uint iWin=0;iWin<nWall;iWin++) {//zero out winBin
@@ -99,14 +103,14 @@ void ReadAlign::stitchPieces(char **R, uint Lread) {
             uint wb=WC[iWin][WC_gStart];
             for (uint ii=0; ii<P.winFlankNbins && wb>0 && mapGen.chrBin[(wb-1) >> P.winBinChrNbits]==WC[iWin][WC_Chr];ii++) {
                 wb--;
-                winBin[ WC[iWin][WC_Str] ][ wb ]=(uintWinBin) iWin;
+                setWinBin(WC[iWin][WC_Str], wb, (uintWinBin) iWin);
             };
             WC[iWin][WC_gStart] = wb;
 
             wb=WC[iWin][WC_gEnd];
             for (uint ii=0; ii<P.winFlankNbins && wb+1<P.winBinN && mapGen.chrBin[(wb+1) >> P.winBinChrNbits]==WC[iWin][WC_Chr];ii++) {
                 wb++;
-                winBin[ WC[iWin][WC_Str] ][ wb ]=(uintWinBin) iWin;
+                setWinBin(WC[iWin][WC_Str], wb, (uintWinBin) iWin);
             };
             WC[iWin][WC_gEnd] = wb;
 
