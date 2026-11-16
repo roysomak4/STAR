@@ -4,6 +4,7 @@
 #include "IncludeDefine.h"
 #include SAMTOOLS_BGZF_H
 #include "Parameters.h"
+#include <zlib.h>
 
 class BAMoutput {//
 public:
@@ -32,6 +33,15 @@ private:
     BGZF *bgzfBAM;
     Parameters &P;
     string bamDir;
+
+    //unsorted output: each mapping thread compresses its own buffer into BGZF blocks outside
+    //mutexOutSAM, and only appends the finished blocks under the lock (see unsortedWrite)
+    bool bgzfParallel; //false: old path, bgzf_write under the lock
+    int bgzfLevel; //zlib level, taken from bgzfBAM so it matches bgzf_write exactly
+    z_stream bgzfZs; //reused for every block (deflateReset gives the same output as a fresh deflateInit2)
+    char *bgzfOut; //compressed blocks of the current buffer
+    uint64 bgzfOutSize; //allocated size of bgzfOut
+    void unsortedWrite(); //write bamArray[0..binBytes1) to bgzfBAM and rewind
 };
 
 #endif
