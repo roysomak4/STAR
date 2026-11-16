@@ -51,22 +51,23 @@ void ReadAlign::stitchPieces(char **R, uint Lread) {
 
             uint aDir   = PC[iP][PC_Dir];
             uint aLength= PC[iP][PC_Length];
+            bool aDirOK = aDir<=1;
 
             for (uint iSA=PC[iP][PC_SAstart]; iSA<=PC[iP][PC_SAend]; iSA++) {//scan through all alignments of this piece
                 // going through ordered positions in the suffix array from PC_SAstart to PC_SAend
                 uint a1 = mapGen.SA[iSA];
-                uint aStr = a1 >> mapGen.GstrandBit;
+                uint gStr = a1 >> mapGen.GstrandBit; //genome strand of this SA entry, 0 or 1
                 a1 &= mapGen.GstrandMask; //remove strand bit
 
-                //convert to positive strand
-                if (aDir==1 && aStr==0) {
-                    aStr=1;
-                } else if (aDir==0 && aStr==1) {
-                    a1 = mapGen.nGenome - (aLength+a1);
-                } else if (aDir==1 && aStr==1) {
-                    aStr=0;
-                    a1 = mapGen.nGenome - (aLength+a1);
-                };
+                //convert to positive strand. Branch-free form of the original
+                //  aDir==1 && gStr==0: aStr=1
+                //  aDir==0 && gStr==1: aStr=1, a1 flipped
+                //  aDir==1 && gStr==1: aStr=0, a1 flipped
+                //i.e. aStr=gStr^aDir, and a1 is flipped whenever gStr==1.
+                //Any other aDir (storeAligns marks removed pieces with -1) leaves everything unchanged, as before.
+                bool flipA1 = aDirOK && gStr==1;
+                uint aStr = aDirOK ? (gStr ^ aDir) : gStr;
+                a1 = flipA1 ? mapGen.nGenome - (aLength+a1) : a1;
 
                 //final strand
                 if (revertStrand) { //modified strand according to user input CHECK!!!!
@@ -135,6 +136,7 @@ void ReadAlign::stitchPieces(char **R, uint Lread) {
         uint aFrag=PC[iP][PC_iFrag];
         uint aLength=PC[iP][PC_Length];
         uint aDir=PC[iP][PC_Dir];
+        bool aDirOK = aDir<=1;
 
         bool aAnchor=(aNrep<=P.winAnchorMultimapNmax); //this align is an anchor or not
 
@@ -145,21 +147,21 @@ void ReadAlign::stitchPieces(char **R, uint Lread) {
         for (uint iSA=PC[iP][PC_SAstart]; iSA<=PC[iP][PC_SAend]; iSA++) {//scan through all alignments
 
             uint a1 = mapGen.SA[iSA];
-            uint aStr = a1 >> mapGen.GstrandBit;
+            uint gStr = a1 >> mapGen.GstrandBit; //genome strand of this SA entry, 0 or 1
             a1 &= mapGen.GstrandMask; //remove strand bit
             uint aRstart=PC[iP][PC_rStart];
 
-            //convert to positive strand
-            if (aDir==1 && aStr==0) {
-                aStr=1;
-                aRstart = Lread - (aLength+aRstart);
-            } else if (aDir==0 && aStr==1) {
-                aRstart = Lread - (aLength+aRstart);
-                a1 = mapGen.nGenome - (aLength+a1);
-            } else if (aDir==1 && aStr==1) {
-                aStr=0;
-                a1 = mapGen.nGenome - (aLength+a1);
-            };
+            //convert to positive strand. Branch-free form of the original
+            //  aDir==1 && gStr==0: aStr=1, aRstart flipped
+            //  aDir==0 && gStr==1: aStr=1, aRstart flipped, a1 flipped
+            //  aDir==1 && gStr==1: aStr=0, a1 flipped
+            //i.e. aStr=gStr^aDir, aRstart is flipped whenever aStr==1, a1 whenever gStr==1.
+            //Any other aDir (storeAligns marks removed pieces with -1) leaves everything unchanged, as before.
+            bool flipA1 = aDirOK && gStr==1;
+            bool flipR  = aDirOK && gStr!=aDir;
+            uint aStr = aDirOK ? (gStr ^ aDir) : gStr;
+            aRstart = flipR ? Lread - (aLength+aRstart) : aRstart;
+            a1 = flipA1 ? mapGen.nGenome - (aLength+a1) : a1;
 
             //final strand
             if (revertStrand) { //modified strand according to user input CHECK!!!!
